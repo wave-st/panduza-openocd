@@ -2,6 +2,7 @@
 Python panduza drivers for openocd
 
 # Features
+* openocd : mqtt bindings for openocd-python
 * driver_reset : trigger reset or reset halt
 * driver_memory : read/write/poll memory
 
@@ -10,14 +11,17 @@ Python panduza drivers for openocd
 
 # Panduza Tree config
 This module forwards all of openocd-python to an mqtt interface.
+The mqtt path must be given to the drivers in order to communicate with the openocd interface.
 
 ```json
 "interfaces": [
                 {
-		                "name": "openocd_interface",
+		    "name": "openocd_interface",
                     "driver": "openocd",
                     "settings": {
-                        "target_polling" : 0.5
+		        "openocd_addr" : <openocd server address (optional, default "localhost")>
+		        "openocd_port" : <openocd tcl rpc port (optional, default 6666)>
+                        "target_polling" : <polling rate of target state in seconds (optional)>
                     }
                 },
             	  {

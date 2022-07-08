@@ -1,5 +1,7 @@
 import time
 import json
+import os
+import base64
 from loguru import logger
 from panduza_platform import MetaDriver
 from openocd_python import *
@@ -71,6 +73,8 @@ class DriverOpenOCD(MetaDriver):
         self.register_command("resetHalt", self.__resetHalt)
         self.register_command("getState", self.__getState)
         self.register_command("resume", self.__resume)
+
+        self.register_command("flashWrite", self.__flashWrite)
 
         self.register_command("command", self.__openocdCommand)
 
@@ -146,6 +150,16 @@ class DriverOpenOCD(MetaDriver):
         self.push_attribute("memory/map", json.dumps(payload_dict), retain=True)
 
 
+    def push_flash_info(self, address, filename, result):
+        payload_dict = {
+            "addr" : hex(address),
+            "filename" : filename,
+            "size" : result,
+            "complete" : (result > 0)
+        }
+        self.push_attribute("flash/map", json.dumps(payload_dict), retain=True)
+
+
     def push_reg_info(self, reg_name, value):
         payload_dict = {
             "addr" : reg_name,
@@ -181,6 +195,7 @@ class DriverOpenOCD(MetaDriver):
         except :
             logger.error("read error")
 
+
     def __writeMemory(self, payload):
         """Memory write
             topic : <itf>/cmds/writeMemory
@@ -198,6 +213,30 @@ class DriverOpenOCD(MetaDriver):
             self.push_memory_info(addr, read_value, width)
         except :
             logger.error("write error")
+
+
+    def __flashWrite(self, payload):
+        """Flash binary file
+            topic : <itf>/cmds/flashWrite
+            expected payload : { "addr" : <str>, "filename" : <str>, "bin": <str ascii (base64)> }
+            note: additionnal fields are ignored
+        """
+        req = self.payload_to_dict(payload)
+        addr = req["addr"]
+        filename = req["filepath"]
+        base64bin = req["bin"]
+        bin = base64.b64decode(base64bin)
+        path = ""
+        
+        if os.name == "posix" :
+            path = "/tmp/"
+        
+        outputfile = open(path + filename, 'wb')
+        outputfile.write(bin)
+        outputfile.close()
+
+        bytes_written = self.openocd.flashWrite(path + filename, addr)
+        self.push_flash_info(addr, filename, bytes_written)
 
 
     def __readRegister(self, payload):
@@ -279,6 +318,7 @@ class DriverOpenOCD(MetaDriver):
         # logger.info("resetHalt")
         self.openocd.resetHalt(blocking=True)
         self.__getState("")
+
 
     def __getState(self, payload):
         """Trigger reset

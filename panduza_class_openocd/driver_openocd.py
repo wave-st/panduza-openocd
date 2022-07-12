@@ -157,7 +157,7 @@ class DriverOpenOCD(MetaDriver):
             "size" : result,
             "complete" : (result > 0)
         }
-        self.push_attribute("flash/map", json.dumps(payload_dict), retain=True)
+        self.push_attribute("flasher", json.dumps(payload_dict), retain=True)
 
 
     def push_reg_info(self, reg_name, value):
@@ -223,7 +223,7 @@ class DriverOpenOCD(MetaDriver):
         """
         req = self.payload_to_dict(payload)
         addr = req["addr"]
-        filename = req["filepath"]
+        filename = req["filename"]
         base64bin = req["bin"]
         bin = base64.b64decode(base64bin)
         path = ""
@@ -235,8 +235,8 @@ class DriverOpenOCD(MetaDriver):
         outputfile.write(bin)
         outputfile.close()
 
-        bytes_written = self.openocd.flashWrite(path + filename, addr)
-        self.push_flash_info(addr, filename, bytes_written)
+        bytes_written = self.openocd.flashWrite(path + filename, int(addr, 16))
+        self.push_flash_info(int(addr, 16), filename, bytes_written)
 
 
     def __readRegister(self, payload):

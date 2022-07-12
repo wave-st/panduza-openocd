@@ -3,7 +3,7 @@ import setuptools
 
 if (__name__ == "__main__"):
     setuptools.setup(
-        name="panduza_drv_openocd",
+        name="panduza_class_openocd",
         description="openOCD driver for Panduza",
         author="Theo Bourdon",
         author_email="",
